@@ -10,7 +10,7 @@ if [ -x $UGLIFYJS ]; then
         (cat "${f}"; echo) >> ${BASEPATH}/build/opportunity-searchbar.js;
     done
     echo "})();" >> ${BASEPATH}/build/opportunity-searchbar.js
-    ${UGLIFYJS} ${BASEPATH}/build/opportunity-searchbar.js -o ${BASEPATH}/build/opportunity-searchbar.min.js
+    ${UGLIFYJS} ${BASEPATH}/build/opportunity-searchbar.js --mangle --compress -o ${BASEPATH}/build/opportunity-searchbar.min.js
 else
     echo "Please install uglifyjs globally or update the path in the build script"
 fi

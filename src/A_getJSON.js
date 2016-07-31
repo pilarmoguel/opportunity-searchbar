@@ -7,10 +7,12 @@ var getJSON = function(url, success, error) {
                 if(http.status == 200) {
                     try {
                         var data = JSON.parse(http.responseText);
-                        success(data);
                     } catch(e) {
+                        data = undefined;
+                        console.error("JSON Error: " + e);
                         error(-1, e);
                     }
+                    if(data != undefined) success(data);
                 } else {
                     error(http.status);
                 }

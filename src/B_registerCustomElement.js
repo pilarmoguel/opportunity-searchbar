@@ -5,8 +5,8 @@ var registerCustomElement = function() {
         var shadow = this.createShadowRoot();
         shadow.innerHTML = innerHtml;
 
-        shadow.getElementById('programme').addEventListener('change', programmeChangeListener);
-        shadow.getElementById('destination').addEventListener('keyup', destinationChangeListener);
+        var pCL = new programmeChangeListener(shadow);
+        var dCL = new destinationChangeListener(shadow);
     };
 
     return document.registerElement('opportunity-searchbar', {prototype: prototype});

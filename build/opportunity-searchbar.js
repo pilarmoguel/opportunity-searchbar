@@ -41,10 +41,12 @@ var getJSON = function(url, success, error) {
                 if(http.status == 200) {
                     try {
                         var data = JSON.parse(http.responseText);
-                        success(data);
                     } catch(e) {
+                        data = undefined;
+                        console.error("JSON Error: " + e);
                         error(-1, e);
                     }
+                    if(data != undefined) success(data);
                 } else {
                     error(http.status);
                 }
@@ -57,8 +59,75 @@ var getJSON = function(url, success, error) {
         console.error("XML HTTP Request not available");
     }
 };
-var destinationChangeListener = function(event) {
+var destinationChangeListener = function(dom) {
 
+    var MAX = 5;
+
+    var timeout = null;
+    var suggestions = dom.getElementById('destination_suggestions');
+    var input = dom.getElementById('destination');
+    var id = dom.getElementById('destination_id');
+    var latestValue = null;
+
+    input.addEventListener('keyup', function(event) {
+        id.name = "";
+        if(timeout !== null) {
+            clearTimeout(timeout);
+        }
+        latestValue = input.value;
+        timeout = setTimeout(proceed, 300);
+    });
+
+    var proceed = function() {
+        var value = latestValue;
+        destinations.regions.get(function(data) {
+            if(value === latestValue) {
+                var selection = [];
+                for(var i = 0; i < data.length && selection.length <= MAX; i++) {
+                    if(data[i].name.toLowerCase().indexOf(value.toLowerCase()) > -1) {
+                        selection.push({id: data[i].id, name: data[i].name, type: 'regions', human: 'Region'});
+                    }
+                }
+                if(selection.length == MAX) {
+                    proceedSelection(value, selection);
+                } else {
+                    destinations.home_mcs.get(function(data) {
+                        if(value === latestValue) {
+                            for(var i = 0; i < data.length && selection.length <= MAX; i++) {
+                                if(data[i].name.toLowerCase().indexOf(value.toLowerCase()) > -1) {
+                                    selection.push({id: data[i].id, name: data[i].name, type: 'home_mcs', human: 'Country'});
+                                }
+                            }
+                            proceedSelection(value, selection);
+                        }
+                    })
+                }
+            }
+        });
+    };
+
+    var proceedSelection = function(value, selection) {
+        if(value === latestValue) {
+            var html = "<ul>";
+            for(var i = 0; i < selection.length; i++) {
+                html += '<li data-type="' + selection[i].type + '" data-id="' + selection[i].id + '">' + selection[i].name + ' (' + selection[i].human + ')</li>';
+            }
+            html += '</ul>';
+            suggestions.innerHTML = html;
+            var lis = suggestions.getElementsByTagName('li');
+            for(var i = 0; i < lis.length; i++) {
+                lis[i].addEventListener('click', select);
+            }
+            suggestions.style.display = "block";
+        }
+    };
+
+    var select = function(event) {
+        suggestions.style.display = "none";
+        input.value = event.target.innerText;
+        id.name = event.target.dataset.type + '[]';
+        id.value = event.target.dataset.id;
+    }
 };
 var destinations = {
     regions : new Promise(function(callback) {
@@ -86,12 +155,16 @@ var innerHtml = '<form action="https://opportunities.aiesec.org/programmes/GCDP"
         '<option value="GIP">Intern Abroad</option>' +
         '<option value="TMP+TLP">Join in Campus</option>' +
     '</select>' +
-    '<input name="earliest_start_date" type="date" />' +
-    '<input id="destination" type="text" />' +
+    '<input name="earliest_start_date" type="date" required/>' +
+    '<input id="destination" type="text" autocomplete="off" />' +
+    '<input id="destination_id" type="hidden" />' +
+    '<div id="destination_suggestions" style="display: none;"></div>' +
     '<input type="submit" value="Search" />' +
 '</form>';
-var programmeChangeListener = function(event) {
-    event.target.form.action = 'https://opportunities.aiesec.org/programmes/' + event.target.value;
+var programmeChangeListener = function(dom) {
+    dom.getElementById('programme').addEventListener('change', function(event) {
+        event.target.form.action = 'https://opportunities.aiesec.org/programmes/' + event.target.value;
+    });
 };
 var registerCustomElement = function() {
     var prototype = Object.create(HTMLElement.prototype);
@@ -100,8 +173,8 @@ var registerCustomElement = function() {
         var shadow = this.createShadowRoot();
         shadow.innerHTML = innerHtml;
 
-        shadow.getElementById('programme').addEventListener('change', programmeChangeListener);
-        shadow.getElementById('destination').addEventListener('keyup', destinationChangeListener);
+        var pCL = new programmeChangeListener(shadow);
+        var dCL = new destinationChangeListener(shadow);
     };
 
     return document.registerElement('opportunity-searchbar', {prototype: prototype});
@@ -109,6 +182,6 @@ var registerCustomElement = function() {
 if ('registerElement' in document) {
     registerCustomElement();
 } else {
-    alert("Your browser is not yet supported");
+    alert("Your browser is not yet supported or maybe not anymore. It seems like it doesn't support HTML5 so the best thing to do is to update your browser.");
 }
 })();
