@@ -1,5 +1,4 @@
 
-<html>
 <?php
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
@@ -15,14 +14,8 @@ and Social Council (ECOSOC), affiliated with the UN DPI, member of ICMYO, and is
 AIESEC International is registered as a Foundation (Stichting), RSIN #807103895 in Rotterdam, The Netherlands.
  */
 ?>
-    <head>
-        <script src="./build/opportunity-searchbar.js"></script>
-    </head>
-    <body>
+
 <?
 plugins_url( '/build/opportunity-searchbar.js', __FILE__ );
 load_plugin_textdomain('opportunity-searchbar', false, basename( dirname( __FILE__ ) ) . '/languages' );
 ?>
-<opportunity-searchbar></opportunity-searchbar>
-    </body>
-</html>
